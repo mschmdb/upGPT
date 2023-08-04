@@ -24,10 +24,10 @@ export const POST = (async ({ request }) => {
 
 		const vectorStore = await PineconeStore.fromExistingIndex(embeddings, { pineconeIndex });
 
-		const model = new ChatOpenAI({ temperature: 0.9, openAIApiKey: OPENAI_API_KEY, modelName: 'gpt-3.5-turbo' });
+		const model = new ChatOpenAI({ temperature: 0.5, openAIApiKey: OPENAI_API_KEY, modelName: 'gpt-3.5-turbo' });
 
 		const chain = VectorDBQAChain.fromLLM(model, vectorStore, {
-			k: 5,
+			k: 10, // Adjust this number to increase the number of similar documents retrieved
 			returnSourceDocuments: true
 		});
 		const response = await chain.call({ query: text });

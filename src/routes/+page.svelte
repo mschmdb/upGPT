@@ -67,18 +67,18 @@
 						<circle cx="8" cy="8" r="8" fill="currentColor"/>
 					</svg>
 				</span>
-                <img
+                <!-- <img
                         src="https://images.unsplash.com/photo-1549078642-b2ba4bda0cdb?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=3&amp;w=144&amp;h=144"
                         alt=""
                         class="w-10 sm:w-16 h-10 sm:h-16 rounded-full"
-                />
+                /> -->
             </div>
             <div class="flex flex-col leading-tight">
                 <div class="text-2xl mt-1 flex items-center">
-                    <span class="text-gray-700 mr-3">Ibentau x GPT</span>
+                    <span class="text-gray-700 mr-3">Unitary Patent x Pinecone x GPT</span>
                 </div>
                 <span class="text-lg text-gray-600"
-                >A technical demo of GPT super-charging a school project</span
+                >POC</span
                 >
             </div>
         </div>
@@ -104,11 +104,11 @@
                             >
                         </div>
                     </div>
-                    <img
+                    <!-- <img
                             src="https://images.unsplash.com/photo-1549078642-b2ba4bda0cdb?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=3&amp;w=144&amp;h=144"
                             alt="My profile"
                             class="w-6 h-6 rounded-full order-1"
-                    />
+                    /> -->
                 </div>
                 {#if message.source !== undefined}
                     <div class="collapse">

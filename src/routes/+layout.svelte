@@ -4,7 +4,7 @@
 
 
 <svelte:head>
-    <title>Ibentau GPT</title>
+    <title>UP GPT</title>
 
 </svelte:head>
 <slot />

@@ -8,7 +8,7 @@ import { writeFile, mkdir, readdir } from 'fs/promises';
 import { MarkdownTextSplitter } from 'langchain/text_splitter';
 import { OpenAIEmbeddings } from 'langchain/embeddings';
 import { PineconeStore } from 'langchain/vectorstores';
-import {PineconeClient} from "@pinecone-database/pinecone";
+import { PineconeClient } from "@pinecone-database/pinecone";
 
 
 const client = new PineconeClient();
@@ -19,16 +19,16 @@ const turndownService = new TurndownService();
 
 // throw error if environment variables are not set
 if (!process.env.PINECONE_API_KEY) {
-    throw new Error('PINECONE_API_KEY is not set');
+	throw new Error('PINECONE_API_KEY is not set');
 }
 if (!process.env.PINECONE_ENVIRONMENT) {
-    throw new Error('PINECONE_ENVIRONMENT is not set');
+	throw new Error('PINECONE_ENVIRONMENT is not set');
 }
 if (!process.env.PINECONE_INDEX) {
-    throw new Error('PINECONE_INDEX is not set');
+	throw new Error('PINECONE_INDEX is not set');
 }
 if (!process.env.PINECONE_API_KEY) {
-    throw new Error('PINECONE_API_KEY is not set');
+	throw new Error('PINECONE_API_KEY is not set');
 }
 
 
@@ -57,22 +57,43 @@ async function get_all_pages_from_cache(): Promise<string> {
  * @returns the markdowns of all researchr pages
  *
  */
-async function scrape_all_pages(): Promise<string[]> {
-	// get urls from json file
-	const { urls } = JSON.parse(await readFile('scripts/pages.json', 'utf8'));
-	console.log(`Got ${urls.length} urls ready to scrape`);
 
-	const browser = await puppeteer.launch();
+
+async function scrape_all_pages(): Promise<string[]> {
+	const urls = [
+		"https://new.epo.org/en/legal/guide-up/2022/index.html",
+		"https://new.epo.org/en/legal/guidelines-pct/2023/index.html",
+		// "https://new.epo.org/en/legal/guidelines-epc/2023/index.html",
+		// add more base URLs here
+	]; 
 	const markdowns: string[] = [];
+
 	for (const url of urls) {
-		try {
-			const markdown = await scrape_researchr_page(url, browser);
-			markdowns.push(markdown);
-		} catch (e) {
-			console.log(`Error scraping ${url}`);
+		console.log(`Ready to scrape from base URL: ${url}`);
+
+		const browser = await puppeteer.launch();
+		const page = await browser.newPage();
+		await page.goto(url);
+
+		// Get all URLs from each base page within the specified div
+		const pageUrls = await page.evaluate(() => {
+			let links = Array.from(document.querySelectorAll('.site-left-menu a'));
+			console.log(links);
+			return links.map(link => (link as HTMLAnchorElement).href);
+		});
+
+		console.log(`Got ${pageUrls.length} urls ready to scrape`);
+
+		for (const url of pageUrls) {
+			try {
+				const markdown = await scrape_researchr_page(url, browser);
+				markdowns.push(markdown);
+			} catch (e) {
+				console.log(`Error scraping ${url}`, e);
+			}
 		}
+		await browser.close();
 	}
-	await browser.close();
 
 	console.log(`Got ${markdowns.length} markdowns ready to save`);
 
@@ -87,6 +108,8 @@ async function scrape_all_pages(): Promise<string[]> {
 
 	return markdowns;
 }
+
+
 
 /**
  * Generates embeddings for the given markdowns and saves them to a pinecone index
@@ -118,28 +141,18 @@ async function generate_embeddings(markdowns: string) {
  */
 async function scrape_researchr_page(url: string, browser: Browser): Promise<string> {
 	const page = await browser.newPage();
-	await page.setJavaScriptEnabled(false);
 	await page.goto(url);
 
-	const element = await page.waitForSelector('#content > div.row > div', {
-		timeout: 100
-	});
+	// Wait for the element to be rendered
+	await page.waitForSelector('.lc-inline_column_second-edit.layoutcomponent-column.col-sm-12.col-md-12.col-lg-6.show-modification-body.legal-text-navigation-buttons');
 
-	if (!element) {
+	const elementHandle = await page.$('.lc-inline_column_second-edit.layoutcomponent-column.col-sm-12.col-md-12.col-lg-6.show-modification-body.legal-text-navigation-buttons');
+
+	if (!elementHandle) {
 		throw new Error('Could not find element');
 	}
 
-	// keep only content elements (like p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, code, table, dl, div)
-	await element.evaluate((element) => {
-		const elements = element.querySelectorAll(
-			'*:not(p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, code, table, dl, div)'
-		);
-		for (let i = 0; i < elements.length; i++) {
-			elements[i].parentNode?.removeChild(elements[i]);
-		}
-	});
+	const elementHTML = await elementHandle.evaluate((element) => element.textContent);
 
-	const html_of_element = await element.evaluate((element) => element.innerHTML);
-
-	return turndownService.turndown(html_of_element);
+	return turndownService.turndown(elementHTML);
 }
